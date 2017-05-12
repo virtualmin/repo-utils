@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ $1 = "old" ]; then
+  rpmsign -D '_gpg_name Virtualmin, Inc. <security@virtualmin.com>' --addsign $2
+elif [ $1 = "vm6" ]; then
+  rpmsign -D '_gpg_name Virtualmin, Inc. (Package signing key for Virtualmin 6) <security@virtualmin.com>' --addsign $2
+fi
+
