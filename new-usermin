@@ -42,7 +42,13 @@ del-broken-links
 # Deb
 cd ${HOME}/result/debian/dists/virtualmin-universal/main/binary-i386
 curl -L -O http://prdownloads.sourceforge.net/webadmin/${prog}_${ver}_all.deb
-cp ${prog}_${ver}_all.deb ../amd64
+cp ${prog}_${ver}_all.deb ../binary-amd64
 rm ${prog}_${oldver}_all.deb
+cp ${prog}_${ver}_all.deb ${HOME}/result/gpl/debian/dists/virtualmin-universal/main/binary-i386
+cp ${prog}_${ver}_all.deb ${HOME}/result/gpl/debian/dists/virtualmin-universal/main/binary-amd64
 cd ../binary-amd64
 rm ${prog}_${oldver}_all.deb
+cd ${HOME}/result/gpl/debian/dists/virtualmin-universal/main/binary-i386
+del-broken-links
+cd ${HOME}/result/gpl/debian/dists/virtualmin-universal/main/binary-amd64
+del-broken-links

@@ -28,8 +28,8 @@ $ENV{'PATH'} = "/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin";
 my $allow_overwrite = 0;
 
 my ($force_theme, $rpmdepends, $no_prefix, $vendor, $provides, $url,
-    $force_usermin, $final_mod, $sign, $epoch, $dir, $ver);
-my @extrareqs;
+    $force_usermin, $final_mod, $sign, $epoch, $dir, $ver, @extrareqs,
+    @exclude);
 
 # Parse command-line args
 while(@ARGV) {
@@ -82,6 +82,9 @@ while(@ARGV) {
 		}
 	elsif ($a eq "--epoch") {
 		$epoch = shift(@ARGV);
+		}
+	elsif ($a eq "--exclude") {
+		push(@exclude, shift(@ARGV));
 		}
 	elsif ($a =~ /^\-\-/) {
 		print STDERR "Unknown option $a\n";
@@ -184,12 +187,11 @@ else {
 	}
 $prefix = "" if ($no_prefix);
 my $ucprog = ucfirst($prog);
-$ver ||= $iver;		# Use module.info version, or 1
-$ver ||= 1;
 
 # Copy the directory to a temp location for tarring
 system("/bin/mkdir -p /tmp/makemodulerpm");
 system("cd $par && /bin/cp -rpL $source_mod /tmp/makemodulerpm/$mod");
+system("/usr/bin/find /tmp/makemodulerpm -name .git | xargs rm -rf");
 system("/usr/bin/find /tmp/makemodulerpm -name .svn | xargs rm -rf");
 system("/usr/bin/find /tmp/makemodulerpm -name .xvpics | xargs rm -rf");
 system("/usr/bin/find /tmp/makemodulerpm -name '*.bak' | xargs rm -rf");
@@ -199,9 +201,29 @@ system("/usr/bin/find /tmp/makemodulerpm -name '.*.swp' | xargs rm -rf");
 system("/usr/bin/find /tmp/makemodulerpm -name core | xargs rm -rf");
 system("/usr/bin/find /tmp/makemodulerpm -name RELEASE | xargs rm -rf");
 system("/usr/bin/find /tmp/makemodulerpm -name RELEASE.sh | xargs rm -rf");
+system("/usr/bin/find /tmp/makemodulerpm -name t | xargs rm -rf");
 if (-r "/tmp/makemodulerpm/$mod/EXCLUDE") {
 	system("cd /tmp/makemodulerpm/$mod && cat EXCLUDE | xargs rm -rf");
 	system("rm -f /tmp/makemodulerpm/$mod/EXCLUDE");
+	}
+foreach my $e (@exclude) {
+	system("/usr/bin/find /tmp/makemodulerpm -name ".quotemeta($e)." | xargs rm -rf");
+	}
+
+# Set version in .info file to match command line, if given
+if ($ver) {
+	if ($minfo{'desc'}) {
+		$minfo{'version'} = $ver;
+		&write_file("/tmp/makemodulerpm/$mod/module.info", \%minfo);
+		}
+	elsif ($tinfo{'desc'}) {
+		$tinfo{'version'} = $ver;
+		&write_file("/tmp/makemodulerpm/$mod/theme.info", \%tinfo);
+		}
+	}
+else {
+	$ver ||= $iver;		# Use module.info version, or 1
+	$ver ||= 1;
 	}
 
 # Tar up the directory
@@ -258,7 +280,8 @@ Name: $prefix$mod
 Version: $ver
 Release: $release
 Requires: /bin/sh /usr/bin/perl /usr/libexec/$prog $rdeps
-AutoReq: 0
+Autoreq: 0
+Autoprov: 0
 License: $licence
 Group: System/Tools
 Source: $mod.tar.gz
@@ -276,7 +299,6 @@ $desc in RPM format
 
 %build
 (find . -name '*.cgi' ; find . -name '*.pl') | perl -ne 'chop; open(F,\$_); \@l=<F>; close(F); \$l[0] = "#\!/usr/bin/perl\$1\n" if (\$l[0] =~ /#\!\\S*perl\\S*(.*)/); open(F,">\$_"); print F \@l; close(F)'
-rm -rf t/
 
 %install
 mkdir -p %{buildroot}/usr/libexec/$prog/$mod
@@ -420,10 +442,25 @@ while(<ARFILE>) {
 close(ARFILE);
 return 1;
 }
- 
+
+# write_file(file, array)
+# Write out the contents of an associative array as name=value lines
+sub write_file
+{
+my (%old, @order);
+&read_file($_[0], \%old, \@order);
+open(ARFILE, ">$_[0]");
+foreach my $k (@order) {
+        print ARFILE $k,"=",$_[1]->{$k},"\n" if (exists($_[1]->{$k}));
+	}
+foreach my $k (keys %{$_[1]}) {
+        print ARFILE $k,"=",$_[1]->{$k},"\n" if (!exists($old{$k}));
+        }
+close(ARFILE);
+}
+
 sub untaint
 {
 $_[0] =~ /^(.*)$/;
 return $1;
 }
-
