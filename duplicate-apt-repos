@@ -1,0 +1,42 @@
+#!/bin/sh
+
+upstream='virtualmin-bionic
+virtualmin-buster
+virtualmin-jessie
+virtualmin-stretch
+virtualmin-trusty
+virtualmin-xenial
+'
+
+for d in upstream; do
+  continue
+  # Mirror all existing aptly repos from software.virtualmin.com
+  aptly mirror drop $d-mirror
+  aptly mirror create $d-mirror http://software.virtualmin.com/vm/6/gpl/apt $d main
+  aptly mirror update $d-mirror
+  # Delete and create repos
+  aptly repo drop $d
+  aptly repo create $d
+  # Import into local repos
+  aptly repo import $d-mirror $d 'Name'
+done
+
+# Universal repos
+aptly mirror drop virtualmin-universal-mirror
+aptly mirror create virtualmin-universal-mirror http://5556176:K2MJ05R7BHU@software.virtualmin.com/vm/6/apt virtualmin-universal main
+aptly mirror update virtualmin-universal-mirror
+aptly repo drop virtualmin-universal
+aptly repo create virtualmin-universal
+aptly repo import virtualmin-universal-mirror virtualmin-universal 'Name'
+aptly mirror drop virtualmin-gpl-universal-mirror
+aptly mirror create virtualmin-gpl-universal-mirror http://software.virtualmin.com/vm/6/gpl/apt virtualmin-universal main
+aptly mirror update virtualmin-gpl-universal-mirror
+aptly repo drop virtualmin-gpl-universal
+aptly repo create virtualmin-gpl-universal
+aptly repo import virtualmin-gpl-universal-mirror virtualmin-universal 'Name'
+
+# Publish repos to the local filesystem
+aptly publish drop virtualmin-universal filesystem:pro:
+aptly -architectures="all" publish repo -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" -distribution="virtualmin-universal" virtualmin-universal filesystem:pro:
+#aptly publish repo -distribution="virtualmin-universal" virtualmin-gpl-universal filesystem:gpl:
+
