@@ -54,3 +54,5 @@ cd ${HOME}/result/gpl/debian/dists/virtualmin-universal/main/binary-amd64
 del-broken-links
 
 aptly repo add virtualmin-universal ${prog}_${ver}_all.deb
+aptly repo add virtualmin-gpl-universal ${prog}_${ver}_all.deb
+

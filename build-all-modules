@@ -2,7 +2,6 @@
 
 # Modules to build
 modules='virtualmin-mailman
-virtualmin-nginx
 virtualmin-awstats
 virtualmin-registrar
 virtualmin-git
@@ -14,6 +13,7 @@ virtualmin-password-recovery
 virtualmin-htpasswd
 virtualmin-google-analytics
 virtualmin-disable
+virtualmin-nginx
 virtualmin-nginx-ssl
 virtualmin-notes
 virtualmin-vsftpd
@@ -25,8 +25,8 @@ virtualmin-init
 virtualmin-iframe
 ruby-gems'
 
-cd $HOME/build/
 for m in $modules; do
+  cd $HOME/build/
   if [ ! -d $m ]; then
     git clone "git@github.com:virtualmin/$m.git"
     cd $m
@@ -37,14 +37,37 @@ for m in $modules; do
   tag_ver=$(git describe --tags --abbrev=0)
   if [[ $tag_ver != v* ]]; then
     # No tagged version, skipping
+    echo "$m: no tags."
     continue
   fi
   ver=$(echo $tag_ver |sed 's/v//')
   old_ver=$(cat "$HOME/build/lastvers/$m")
   if [ $(echo $ver'>'$old_ver | bc -l) == 1 ]; then
-    echo "Newer version found, building."
+    echo "$m: Newer version found, building."
+    cd $HOME/build/
+    # Debian package
+    makemoduledeb.pl --deb-depends --licence "GPLv3" --email "joe@virtualmin.com" --allow-overwrite --target-dir tmp $m
+    # RPM package
+    makemodulerpm.pl --rpm-depends --licence "GPLv3" --allow-overwrite --rpm-dir $HOME/rpmbuild --target-dir tmp $m
+    # Copy into place
+    cp tmp/*.deb $HOME/result/debian/dists/virtualmin-universal/main/binary-i386
+    cp tmp/*.deb $HOME/result/debian/dists/virtualmin-universal/main/binary-amd64
+    cp tmp/*.deb $HOME/result/gpl/debian/dists/virtualmin-universal/main/binary-i386
+    cp tmp/*.deb $HOME/result/gpl/debian/dists/virtualmin-universal/main/binary-amd64
+    aptly repo add virtualmin-universal tmp/*.deb
+    aptly repo add virtualmin-gpl-universal tmp/*.deb
+    cp tmp/*.rpm $HOME/result/universal/
+    cp tmp/*.rpm $HOME/result/gpl/universal/
+    cp tmp/*.rpm $HOME/result/vm/6/universal/
+    cp tmp/*.rpm $HOME/result/vm/6/gpl/universal/
+
+    # Cleanup
+    rm tmp/*$m*
+
+    # Bump rev in lastvers
+    echo "$ver" > "$HOME/build/lastvers/$m"
   fi
-  echo $ver
-  echo $old_ver
+  echo "$m git version: $ver"
+  echo "$m old version: $old_ver"
 done
 

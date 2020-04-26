@@ -1,4 +1,5 @@
 #!/usr/bin/bash
+# XXX Does not work right yet. Purges everything eventually, somehow.
 # Removes old packages in the received repo
 #
 # $1: Repository

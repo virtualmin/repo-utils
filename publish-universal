@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Publish repos to the local filesystem
+#aptly -architectures="all" publish repo -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" -distribution="virtualmin-universal" virtualmin-universal filesystem:pro:
+#aptly -architectures="all" publish repo -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" -distribution="virtualmin-universal" virtualmin-gpl-universal filesystem:gpl:
+
+aptly publish update -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" virtualmin-universal filesystem:pro:
+aptly publish update -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" virtualmin-universal filesystem:gpl:
+
