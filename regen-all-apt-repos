@@ -1,0 +1,28 @@
+#!/bin/sh
+echo "Be careful. Edit this to make sure this isn't gonna break something."
+
+upstream='virtualmin-bionic
+virtualmin-buster
+virtualmin-jessie
+virtualmin-stretch
+virtualmin-trusty
+virtualmin-xenial
+'
+
+for d in $upstream; do
+  # Delete the endpoint first
+  aptly publish drop $d filesystem:pro:
+  aptly publish drop $d filesystem:gpl:
+  # Publish
+  aptly -architectures="amd64,i386,all" publish repo -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" -distribution="$d" $d filesystem:pro:
+  aptly -architectures="amd64,i386,all" publish repo -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" -distribution="$d" $d filesystem:gpl:
+done
+
+# Universal repos
+aptly publish drop virtualmin-universal filesystem:pro:
+aptly publish drop virtualmin-universal filesystem:gpl:
+
+# Publish repos to the local filesystem
+aptly -architectures="amd64,i386,all" publish repo -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" -distribution="virtualmin-universal" virtualmin-universal filesystem:pro:
+aptly -architectures="amd64,i386,all" publish repo -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" -distribution="virtualmin-universal" virtualmin-gpl-universal filesystem:gpl:
+

@@ -1,0 +1,19 @@
+#!/usr/bin/bash
+
+basedir='/home/build/result'
+
+debrepos='universal'
+
+# Debian repos
+for t in debian gpl/debian; do
+  cd "$basedir/$t"
+  pwd
+  for d in $debrepos; do
+    apt-ftparchive generate -c="/home/build/etc/aptftp-$d.conf" "/home/build/etc/aptgenerate-$d.conf"
+    cd "$basedir/$t/dists/virtualmin-$d"
+    apt-ftparchive release -c="/home/build/etc/aptftp-$d.conf" . > Release
+    # Sign with the old key
+    gpg -abs --local-user 31D2B18872EAF68EFB81F81DE8DD3FA0A0BDBCF9 -o Release.gpg Release
+  done
+done
+

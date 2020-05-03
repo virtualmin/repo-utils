@@ -43,12 +43,15 @@ for m in $modules; do
   ver=$(echo $tag_ver |sed 's/v//')
   old_ver=$(cat "$HOME/build/lastvers/$m")
   if [ $(echo $ver'>'$old_ver | bc -l) == 1 ]; then
+    publish=1
     echo "$m: Newer version found, building."
     cd $HOME/build/
     # Debian package
-    makemoduledeb.pl --deb-depends --licence "GPLv3" --email "joe@virtualmin.com" --allow-overwrite --target-dir tmp $m
+    makemoduledeb.pl --licence "GPLv3" --email "joe@virtualmin.com" --allow-overwrite --target-dir tmp $m
     # RPM package
-    makemodulerpm.pl --rpm-depends --licence "GPLv3" --allow-overwrite --rpm-dir $HOME/rpmbuild --target-dir tmp $m
+    makemodulerpm.pl --licence "GPLv3" --allow-overwrite --rpm-dir $HOME/rpmbuild --target-dir tmp $m
+    # wbm
+    create-module.pl "tmp/$m-$ver.wbm.gz" "$m"
     # Copy into place
     cp tmp/*.deb $HOME/result/debian/dists/virtualmin-universal/main/binary-i386
     cp tmp/*.deb $HOME/result/debian/dists/virtualmin-universal/main/binary-amd64
@@ -56,13 +59,21 @@ for m in $modules; do
     cp tmp/*.deb $HOME/result/gpl/debian/dists/virtualmin-universal/main/binary-amd64
     aptly repo add virtualmin-universal tmp/*.deb
     aptly repo add virtualmin-gpl-universal tmp/*.deb
+
+    sign-with old tmp/*.rpm
     cp tmp/*.rpm $HOME/result/universal/
     cp tmp/*.rpm $HOME/result/gpl/universal/
+    sign-with vm6 tmp/*.rpm
     cp tmp/*.rpm $HOME/result/vm/6/universal/
     cp tmp/*.rpm $HOME/result/vm/6/gpl/universal/
 
+    cp tmp/*.wbm.gz $HOME/result/wbm
+    cp tmp/*.wbm.gz $HOME/result/gpl/wbm
+    cp tmp/*.wbm.gz $HOME/result/vm/6/wbm
+    cp tmp/*.wbm.gz $HOME/result/vm/6/gpl/wbm
+
     # Cleanup
-    rm tmp/*$m*
+    rm tmp/*
 
     # Bump rev in lastvers
     echo "$ver" > "$HOME/build/lastvers/$m"
@@ -70,4 +81,10 @@ for m in $modules; do
   echo "$m git version: $ver"
   echo "$m old version: $old_ver"
 done
+
+if [ $publish -eq 1 ]; then
+  update-universal-apt
+  publish-universal
+  rsync-repos.sh
+fi
 
