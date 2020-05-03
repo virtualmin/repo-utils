@@ -14,6 +14,7 @@ for t in debian gpl/debian; do
     cd "$basedir/$t/dists/virtualmin-$d"
     apt-ftparchive release -c="/home/build/etc/aptftp-$d.conf" . > Release
     # Sign with the old key
+    rm -f Release.gpg
     gpg -abs --local-user 31D2B18872EAF68EFB81F81DE8DD3FA0A0BDBCF9 -o Release.gpg Release
   done
 done
@@ -27,6 +28,7 @@ for t in ubuntu gpl/ubuntu; do
     cd "$basedir/$t/dists/virtualmin-$d"
     apt-ftparchive release -c="/home/build/etc/aptftp-$d.conf" . > Release
     # Sign with the old key
+    rm -f Release.gpg
     gpg -abs --local-user 31D2B18872EAF68EFB81F81DE8DD3FA0A0BDBCF9 -o Release.gpg Release
   done
 done
