@@ -23,6 +23,7 @@ virtualmin-multi-login
 virtualmin-mailrelay
 virtualmin-init
 virtualmin-iframe
+virtualmin-messageoftheday
 ruby-gems'
 
 for m in $modules; do
@@ -42,6 +43,11 @@ for m in $modules; do
   fi
   ver=$(echo $tag_ver |sed 's/v//')
   old_ver=$(cat "$HOME/build/lastvers/$m")
+  if [ -f "$HOME/build/epochs/$m" ]; then
+    epoch="--epoch $(cat $HOME/build/epochs/$m)"
+  else
+    epoch=""
+  fi
   if [ $(echo $ver'>'$old_ver | bc -l) == 1 ]; then
     publish=1
     echo "$m: Newer version found, building."
@@ -49,7 +55,7 @@ for m in $modules; do
     # Debian package
     makemoduledeb.pl --licence "GPLv3" --email "joe@virtualmin.com" --allow-overwrite --target-dir tmp $m
     # RPM package
-    makemodulerpm.pl --licence "GPLv3" --allow-overwrite --rpm-dir $HOME/rpmbuild --target-dir tmp $m
+    makemodulerpm.pl --licence "GPLv3" --allow-overwrite $epoch --rpm-dir $HOME/rpmbuild --target-dir tmp $m
     # wbm
     create-module.pl "tmp/$m-$ver.wbm.gz" "$m"
     # Copy into place
