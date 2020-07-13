@@ -1,5 +1,22 @@
 #!/bin/bash
 
+# vgt $oldver $newver - version greater than test
+function vgt() {
+  parts=(${1//./ })
+  major=${parts[0]}
+  minor=${parts[1]}
+  newparts=(${2//./ })
+  newmajor=${newparts[0]}
+  newminor=${newparts[1]}
+  if (( $major < $newmajor )); then
+    return 0
+  elif (( $major == $newmajor )) && (( $minor < $newminor )); then
+    return 0
+  else
+    return 1
+  fi
+}
+
 # Modules to build
 modules='virtualmin-mailman
 virtualmin-awstats
@@ -49,7 +66,8 @@ for m in $modules; do
   else
     epoch=""
   fi
-  if [ $(echo $ver'>'$old_ver | bc -l) == 1 ]; then
+  echo "$m $old_ver -> $ver"
+  if vgt $old_ver $ver; then
     publish=1
     echo "$m: Newer version found, building."
     cd $HOME/build/

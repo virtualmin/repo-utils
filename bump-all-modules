@@ -1,0 +1,37 @@
+#!/bin/bash
+# Bump all module versions by .1
+
+basedir="/home/build/build"
+
+# Modules to build
+modules='virtualmin-mailman
+virtualmin-awstats
+virtualmin-registrar
+virtualmin-dav
+virtualmin-git
+virtualmin-sqlite
+virtualmin-slavedns
+virtualmin-powerdns
+virtualmin-password-recovery
+virtualmin-htpasswd
+virtualmin-google-analytics
+virtualmin-disable
+virtualmin-nginx
+virtualmin-nginx-ssl
+virtualmin-notes
+virtualmin-vsftpd
+virtualmin-signup
+virtualmin-oracle
+virtualmin-multi-login
+virtualmin-mailrelay
+virtualmin-init
+virtualmin-iframe
+virtualmin-messageoftheday
+webmin-jailkit
+ruby-gems'
+
+cd $basedir
+for m in $modules; do
+  bump-mod-rev $m
+done
+

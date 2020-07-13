@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Bumps revision of a Webmin module by .1 and tags a new release
+m=$1
+
+cd $m
+ver=$(git tag --sort=committerdate | tail -1 | sed 's/v//')
+parts=(${ver//./ })
+major=${parts[0]}
+minor=${parts[1]}
+newver="${major}.$(($minor + 1))"
+echo "$m $ver -> $newver"
+
+sed -i "s/^version=.*/version=$newver/" module.info
+
+git tag -a "v$newver" -m "Version $newver"
+git push origin "v$newver"
