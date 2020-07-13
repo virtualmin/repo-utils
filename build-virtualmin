@@ -1,0 +1,99 @@
+#!/bin/bash
+
+# Build Pro packages
+m="virtual-server"
+
+cd $HOME/build/
+if [ ! -d virtualmin-gpl ]; then
+  git clone "git@github.com:virtualmin/virtualmin-gpl.git"
+else
+  cd virtualmin-gpl
+  git pull
+  cd ..
+fi
+if [ ! -d virtualmin-pro ]; then
+  git clone "git@github.com:virtualmin/virtualmin-pro.git"
+else
+  cd virtualmin-pro
+  git pull
+  cd ..
+fi
+
+cd virtualmin-gpl
+echo "Back in $(pwd)"
+
+# Link in Pro
+if [ ! -h pro ]; then
+  ln -s ../virtualmin-pro pro
+fi
+# Get latest version
+#ver=$(git describe --tags --abbrev=0)
+ver=$(git tag --sort=committerdate | tail -1)
+git checkout tags/$ver
+old_ver=$(cat "$HOME/build/lastvers/$m")
+if [ $(echo $ver'>'$old_ver | bc -l) == 1 ]; then
+  publish=1
+  echo "$m: Newer version found, building."
+  cd $HOME/build/
+  # Link it so name is right
+  if [ ! -h $m ]; then
+    ln -sf virtualmin-gpl $m
+  fi
+  # Debian package
+  makemoduledeb.pl --licence "Copyright Virtualmin, Inc." --email "joe@virtualmin.com" --allow-overwrite --target-dir tmp $m
+  # RPM package
+  makemodulerpm.pl --licence "Copyright Virtualmin, Inc." --allow-overwrite --epoch 3 --rpm-dir $HOME/rpmbuild --target-dir tmp $m
+  # wbm
+  create-module.pl "tmp/$m-$ver.wbm.gz" "$m"
+
+  # Copy into place
+  cp tmp/*.deb $HOME/result/debian/dists/virtualmin-universal/main/binary-i386
+  cp tmp/*.deb $HOME/result/debian/dists/virtualmin-universal/main/binary-amd64
+  aptly repo add virtualmin-universal tmp/*.deb
+
+  sign-with old tmp/*.rpm
+  cp tmp/*.rpm $HOME/result/universal/
+  sign-with vm6 tmp/*.rpm
+  cp tmp/*.rpm $HOME/result/vm/6/universal/
+
+  cp tmp/*.wbm.gz $HOME/result/wbm
+  cp tmp/*.wbm.gz $HOME/result/vm/6/wbm
+  
+  # Cleanup Pro
+  rm tmp/*
+
+  # Download GPL
+  wget -P tmp/ https://download.webmin.com/download/virtualmin/wbm-virtual-server-$ver.gpl-1.noarch.rpm
+  wget -P tmp/ https://download.webmin.com/download/virtualmin/webmin-virtual-server_$ver.gpl_all.deb
+  wget -P tmp/ https://download.webmin.com/download/virtualmin/virtual-server-$ver.gpl.wbm.gz
+  # Copy into place
+  cp tmp/*gpl*.deb $HOME/result/gpl/debian/dists/virtualmin-universal/main/binary-i386
+  cp tmp/*gpl*.deb $HOME/result/gpl/debian/dists/virtualmin-universal/main/binary-amd64
+  aptly repo add virtualmin-gpl-universal tmp/*gpl*.deb
+
+  sign-with old tmp/*.rpm
+  cp tmp/*gpl*.rpm $HOME/result/gpl/universal/
+  sign-with vm6 tmp/*.rpm
+  cp tmp/*gpl*.rpm $HOME/result/vm/6/gpl/universal/
+
+  cp tmp/*gpl*.wbm.gz $HOME/result/gpl/wbm
+  cp tmp/*gpl*.wbm.gz $HOME/result/vm/6/gpl/wbm
+
+  # Cleanup
+  rm tmp/*
+
+  # Bump rev in lastvers
+  echo "$ver" > "$HOME/build/lastvers/$m"
+else
+  echo "No new version found."
+  publish=0
+fi
+echo "$m git version: $ver"
+echo "$m old version: $old_ver"
+
+if [ $publish -eq 1 ]; then
+  update-universal-apt
+  publish-universal
+  # rsync-repos.sh
+fi
+

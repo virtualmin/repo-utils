@@ -19,6 +19,7 @@ use File::Temp ('tempdir');
 my $builddir = tempdir('equivs.XXXXXX', DIR => ($ENV{TMPDIR} || cwd), CLEANUP => 1) or
   die "Cannot create temporary build dir: $!\n";
 my %control;
+my $sharedir = $ENV{'HOME'} . "/.equivs";
 
 sub usage {
   print STDERR <<EOU;
@@ -47,7 +48,7 @@ if (! $controlfile) {
   usage();
 }
 
-system("cp -R /usr/share/equivs/template/* \"$builddir\"") == 0 or
+system("cp -R $sharedir/template/* \"$builddir\"") == 0 or
   die "Error on copy of the template files: exit status " . ($?>>8) . "\n";
 
 # Parse the equivs control file

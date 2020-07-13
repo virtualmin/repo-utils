@@ -24,6 +24,7 @@ virtualmin-mailrelay
 virtualmin-init
 virtualmin-iframe
 virtualmin-messageoftheday
+webmin-jailkit
 ruby-gems'
 
 for m in $modules; do
