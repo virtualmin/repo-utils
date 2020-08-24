@@ -3,7 +3,7 @@
 # Build Pro packages
 m="virtual-server"
 
-cd $HOME/build/
+cd $HOME/build/webmin/
 if [ ! -d virtualmin-gpl ]; then
   git clone "git@github.com:virtualmin/virtualmin-gpl.git"
 else
@@ -34,17 +34,18 @@ old_ver=$(cat "$HOME/build/lastvers/$m")
 if [ $(echo $ver'>'$old_ver | bc -l) == 1 ]; then
   publish=1
   echo "$m: Newer version found, building."
-  cd $HOME/build/
+  cd $HOME/build/webmin
   # Link it so name is right
   if [ ! -h $m ]; then
     ln -sf virtualmin-gpl $m
   fi
+  ## Pro Packages
   # Debian package
-  makemoduledeb.pl --licence "Copyright Virtualmin, Inc." --email "joe@virtualmin.com" --allow-overwrite --target-dir tmp $m
+  makemoduledeb.pl --licence "Copyright Virtualmin, Inc." --email "joe@virtualmin.com" --allow-overwrite --target-dir tmp $m "$ver.pro"
   # RPM package
-  makemodulerpm.pl --licence "Copyright Virtualmin, Inc." --allow-overwrite --epoch 3 --rpm-dir $HOME/rpmbuild --target-dir tmp $m
+  makemodulerpm.pl --licence "Copyright Virtualmin, Inc." --allow-overwrite --epoch 3 --rpm-dir $HOME/rpmbuild --target-dir tmp $m "$ver.pro"
   # wbm
-  create-module.pl "tmp/$m-$ver.wbm.gz" "$m"
+  create-module.pl "tmp/$m-$ver/.pro.wbm.gz" "$m"
 
   # Copy into place
   cp tmp/*.deb $HOME/result/debian/dists/virtualmin-universal/main/binary-i386
@@ -62,8 +63,10 @@ if [ $(echo $ver'>'$old_ver | bc -l) == 1 ]; then
   # Cleanup Pro
   rm tmp/*
 
+  ## Package GPL rpm
+  makemodulerpm.pl --licence "Copyright Virtualmin, Inc." --exclude pro --allow-overwrite --epoch 3 --rpm-dir $HOME/rpmbuild --target-dir tmp $m "$ver.gpl"
   # Download GPL
-  wget -P tmp/ https://download.webmin.com/download/virtualmin/wbm-virtual-server-$ver.gpl-1.noarch.rpm
+  #wget -P tmp/ https://download.webmin.com/download/virtualmin/wbm-virtual-server-$ver.gpl-1.noarch.rpm
   wget -P tmp/ https://download.webmin.com/download/virtualmin/webmin-virtual-server_$ver.gpl_all.deb
   wget -P tmp/ https://download.webmin.com/download/virtualmin/virtual-server-$ver.gpl.wbm.gz
   # Copy into place
@@ -91,6 +94,7 @@ fi
 echo "$m git version: $ver"
 echo "$m old version: $old_ver"
 
+exit 0
 if [ $publish -eq 1 ]; then
   update-universal-apt
   publish-universal

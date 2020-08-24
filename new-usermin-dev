@@ -13,12 +13,12 @@ else
   rel=$2
 fi
 
-prog=webmin
+prog=usermin
 rpmname=${prog}-${ver}-${rel}
 
 # RPM
 cd ${HOME}/result/universal
-curl -L -O http://prdownloads.sourceforge.net/webadmin/${rpmname}.noarch.rpm
+curl -L -O /https://download.webmin.com/devel/rpm/${rpmname}.noarch.rpm
 old=`repomanage --keep=2 --old . | grep ${prog}`
 rm -f $old
 cp ${rpmname}.noarch.rpm ${HOME}/result/vm/6/universal
@@ -33,7 +33,7 @@ rm -f $old
 
 # tarball
 cd ${HOME}/result/wbm
-curl -L -O http://prdownloads.sourceforge.net/webadmin/${prog}-${ver}.tar.gz
+curl -L -O https://download.webmin.com/devel/tarballs/${prog}-${ver}.tar.gz
 rm ${prog}-${oldver}.tar.gz
 cd ${HOME}/result/gpl/wbm
 ln -s ../../wbm/${prog}-${ver}.tar.gz
@@ -41,7 +41,7 @@ del-broken-links
 
 # Deb
 cd ${HOME}/result/debian/dists/virtualmin-universal/main/binary-i386
-curl -L -O http://prdownloads.sourceforge.net/webadmin/${prog}_${ver}_all.deb
+curl -L -O https://download.webmin.com/devel/deb/${prog}_${ver}_all.deb
 cp ${prog}_${ver}_all.deb ../binary-amd64
 rm ${prog}_${oldver}_all.deb
 cp ${prog}_${ver}_all.deb ${HOME}/result/gpl/debian/dists/virtualmin-universal/main/binary-i386

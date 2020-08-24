@@ -4,7 +4,8 @@
 m=$1
 
 cd $m
-ver=$(git tag --sort=committerdate | tail -1 | sed 's/v//')
+git pull
+ver=$(git tag --sort=taggerdate | tail -1 | sed 's/v//')
 parts=(${ver//./ })
 major=${parts[0]}
 minor=${parts[1]}
@@ -12,6 +13,8 @@ newver="${major}.$(($minor + 1))"
 echo "$m $ver -> $newver"
 
 sed -i "s/^version=.*/version=$newver/" module.info
-
+git add module.info
+git commit -m "Bump revision"
+git push
 git tag -a "v$newver" -m "Version $newver"
 git push origin "v$newver"

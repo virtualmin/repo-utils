@@ -9,7 +9,6 @@ virtualmin-awstats
 virtualmin-registrar
 virtualmin-dav
 virtualmin-git
-virtualmin-sqlite
 virtualmin-slavedns
 virtualmin-powerdns
 virtualmin-password-recovery

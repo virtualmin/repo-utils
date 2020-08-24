@@ -333,11 +333,13 @@ open(my $PREINSTALL, ">", "$preinstall_file");
 no warnings "uninitialized";
 print $PREINSTALL <<EOF;
 #!/bin/sh
-if [ ! -r /etc/$product/config -o ! -d /usr/share/$product ]; then
-	echo "$ucproduct does not appear to be installed on your system."
-	echo "This package cannot be installed unless the Debian version of $ucproduct"
-	echo "is installed first."
-	exit 1
+if [ "$debdepends" != 1 ]; then
+	if [ ! -r /etc/$product/config -o ! -d /usr/share/$product ]; then
+		echo "$ucproduct does not appear to be installed on your system."
+		echo "This package cannot be installed unless the Debian version of $ucproduct"
+		echo "is installed first."
+		exit 1
+	fi
 fi
 if [ "$depends" != "" -a "$debdepends" != 1 ]; then
 	# Check if depended webmin/usermin modules are installed
