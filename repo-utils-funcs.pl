@@ -1,3 +1,9 @@
+=head2 compare_version_numbers(ver1, ver2)
+
+Compares to version "number" strings, and returns -1 if ver1 is older than ver2,
+0 if they are equal, or 1 if ver1 is newer than ver2.
+
+=cut
 sub compare_version_numbers
 {
 my ($ver1, $ver2) = @_;
