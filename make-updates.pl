@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Creates an updates.txt file based on existing module files
-
+require "./repo-utils-funcs.pl";
 @dirs = ( "." );
 
 # Find all available files
@@ -14,7 +14,7 @@ foreach $dir (@dirs) {
         $ver =~ s/\-//g;
         $path = "$dir/$f";
         $path =~ s/^.*public_html//g;
-        if ($ver > $bestver{$mod}) {
+        if (compare_version_numbers($ver, $bestver{$mod}) == 1) {
             $bestver{$mod} = $ver;
             $bestfile{$mod} = $path;
             }
