@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 # Create Webmin and Usermin versoin files
-
+require "./repo-utils-funcs.pl";
 if ($0 =~ /^(.*)\//) {
         chdir($1);
         }
@@ -9,7 +9,7 @@ foreach my $f (readdir(DIR)) {
         if ($f =~ /^(webmin|usermin)-([0-9\.]+)\.tar.gz$/) {
                 $pkg = $1;
                 $ver = $2;
-                if ($ver >= $maxver{$pkg}) {
+		if (compare_version_numbers($ver, $maxver{$pkg}) == 1) {
                         # Found a new winner
                         $maxver{$pkg} = $ver;
                         }
