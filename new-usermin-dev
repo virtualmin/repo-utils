@@ -16,7 +16,7 @@ else
   rel=$2
 fi
 
-prog=webmin
+prog=usermin
 rpmname=${prog}-${ver}-${rel}
 
 # RPM
