@@ -28,59 +28,73 @@ if [ ! -h pro ]; then
 fi
 # Get latest version
 #ver=$(git describe --tags --abbrev=0)
-ver=$(git tag --sort=committerdate | tail -1)
-git checkout tags/$ver
+ver=$(git tag --sort=committerdate | tail -1 |cut -d'-' -f1)
+rel=$(git tag --sort=committerdate | tail -1 |cut -d'-' -s -f2)
+if [ -z $rel ]; then 
+  rel=1
+  git checkout tags/$ver
+else
+  git checkout tags/$ver-$rel
+fi
 old_ver=$(cat "$HOME/build/lastvers/$m")
-if [ $(echo $ver'>'$old_ver | bc -l) == 1 ]; then
+echo "Version: $ver"
+echo "Release: $rel"
+
+sleep 1
+
+# This does not handle releases. Argh.
+if [ true ]; then
+#if [ $(echo $ver'>'$old_ver | bc -l) == 1 ]; then
   publish=1
   echo "$m: Newer version found, building."
   cd $HOME/build/webmin
   # Link it so name is right
   if [ ! -h $m ]; then
+    rm $m
     ln -sf virtualmin-gpl $m
   fi
   ## Pro Packages
   # Debian package
-  makemoduledeb.pl --licence "Copyright Virtualmin, Inc." --email "joe@virtualmin.com" --allow-overwrite --target-dir tmp $m "$ver.pro"
+  makemoduledeb.pl --licence "Copyright Virtualmin, Inc." --email "joe@virtualmin.com" --allow-overwrite --target-dir tmp $m "$ver.pro-$rel"
   # RPM package
-  makemodulerpm.pl --licence "Copyright Virtualmin, Inc." --allow-overwrite --epoch 3 --rpm-dir $HOME/rpmbuild --target-dir tmp $m "$ver.pro"
+  makemodulerpm.pl --licence "Copyright Virtualmin, Inc." --allow-overwrite --epoch 3 --rpm-dir $HOME/rpmbuild --target-dir tmp $m "$ver.pro" --release "$rel"
   # wbm
-  create-module.pl "tmp/$m-$ver/.pro.wbm.gz" "$m"
+  create-module.pl "tmp/$m-$ver.pro-$rel.wbm.gz" "$m"
 
   # Copy into place
-  cp tmp/*.deb $HOME/result/debian/dists/virtualmin-universal/main/binary-i386
-  cp tmp/*.deb $HOME/result/debian/dists/virtualmin-universal/main/binary-amd64
   aptly repo add virtualmin-universal tmp/*.deb
+  aptly repo add virtualmin-7-pro tmp/*.deb
 
-  sign-with old tmp/*.rpm
-  cp tmp/*.rpm $HOME/result/universal/
   sign-with vm6 tmp/*.rpm
   cp tmp/*.rpm $HOME/result/vm/6/universal/
+  sign-with vm7 tmp/*.rpm
+  cp tmp/*.rpm $HOME/result/vm/7/pro/rpm/noarch/
 
-  cp tmp/*.wbm.gz $HOME/result/wbm
   cp tmp/*.wbm.gz $HOME/result/vm/6/wbm
+  cp tmp/*.wbm.gz $HOME/result/vm/7/wbm
   
   # Cleanup Pro
   rm tmp/*
 
+  # Debian package
+  makemoduledeb.pl --licence "Copyright Virtualmin, Inc." --exclude pro --email "joe@virtualmin.com" --allow-overwrite --target-dir tmp $m "$ver.gpl-$rel"
   ## Package GPL rpm
-  makemodulerpm.pl --licence "Copyright Virtualmin, Inc." --exclude pro --allow-overwrite --epoch 3 --rpm-dir $HOME/rpmbuild --target-dir tmp $m "$ver.gpl"
+  makemodulerpm.pl --licence "Copyright Virtualmin, Inc." --exclude pro --allow-overwrite --epoch 3 --rpm-dir $HOME/rpmbuild --target-dir tmp $m "$ver.gpl" --release $rel
   # Download GPL
-  #wget -P tmp/ https://download.webmin.com/download/virtualmin/wbm-virtual-server-$ver.gpl-1.noarch.rpm
-  wget -P tmp/ https://download.webmin.com/download/virtualmin/webmin-virtual-server_$ver.gpl_all.deb
-  wget -P tmp/ https://download.webmin.com/download/virtualmin/virtual-server-$ver.gpl.wbm.gz
+  #wget -P tmp/ https://download.webmin.com/download/virtualmin/virtual-server-$ver.gpl.wbm.gz
+  # wbm
+  create-module.pl --exclude pro "tmp/$m-$ver.gpl-$rel.wbm.gz" "$m"
   # Copy into place
-  cp tmp/*gpl*.deb $HOME/result/gpl/debian/dists/virtualmin-universal/main/binary-i386
-  cp tmp/*gpl*.deb $HOME/result/gpl/debian/dists/virtualmin-universal/main/binary-amd64
   aptly repo add virtualmin-gpl-universal tmp/*gpl*.deb
+  aptly repo add virtualmin-7-gpl tmp/*gpl*.deb
 
-  sign-with old tmp/*.rpm
-  cp tmp/*gpl*.rpm $HOME/result/gpl/universal/
   sign-with vm6 tmp/*.rpm
   cp tmp/*gpl*.rpm $HOME/result/vm/6/gpl/universal/
+  sign-with vm7 tmp/*.rpm
+  cp tmp/*gpl*.rpm $HOME/result/vm/7/gpl/rpm/noarch
 
-  cp tmp/*gpl*.wbm.gz $HOME/result/gpl/wbm
   cp tmp/*gpl*.wbm.gz $HOME/result/vm/6/gpl/wbm
+  cp tmp/*gpl*.wbm.gz $HOME/result/vm/7/gpl/wbm
 
   # Cleanup
   rm tmp/*
@@ -96,8 +110,9 @@ echo "$m old version: $old_ver"
 
 exit 0
 if [ $publish -eq 1 ]; then
-  update-universal-apt
+#  update-universal-apt
   publish-universal
-  # rsync-repos.sh
+  updatevm7rpm.sh
+  rsync-repos.sh
 fi
 

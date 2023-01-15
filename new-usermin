@@ -19,17 +19,30 @@ rpmname=${prog}-${ver}-${rel}
 # RPM
 cd ${HOME}/result/universal
 curl -L -O http://prdownloads.sourceforge.net/webadmin/${rpmname}.noarch.rpm
-old=`repomanage --keep=2 --old . | grep ${prog}`
-rm -f $old
-cp ${rpmname}.noarch.rpm ${HOME}/result/vm/6/universal
-cd ${HOME}/result/vm/6/universal
-rm -f $old
+#old=`repomanage --keep=2 --old . | grep ${prog}`
+#rm -f $old
 cd ${HOME}/result/gpl/universal
 ln -sf ../../universal/${rpmname}.noarch.rpm .
 rm -f $old
-cd ${HOME}/result/vm/6/gpl/universal
-ln -sf ../../universal/${rpmname}.noarch.rpm .
-rm -f $old
+for vmver in 6; do
+  cd ${HOME}/result/universal
+  cp ${rpmname}.noarch.rpm ${HOME}/result/vm/$vmver/universal
+  cd ${HOME}/result/vm/$vmver/universal
+  rm -f $old
+  cd ${HOME}/result/vm/$vmver/gpl/universal
+  ln -sf ../../universal/${rpmname}.noarch.rpm .
+  rm -f $old
+done
+for vmver in 7; do
+  cd ${HOME}/result/universal
+  cp ${rpmname}.noarch.rpm ${HOME}/result/vm/$vmver/pro/rpm/noarch
+  cp ${rpmname}.noarch.rpm ${HOME}/result/vm/$vmver/gpl/rpm/noarch
+  cd ${HOME}/result/vm/$vmver/pro/rpm/noarch
+  rm -f $old
+  cd ${HOME}/result/vm/$vmver/gpl/rpm/noarch
+  rm -f $old
+done
+
 
 # tarball
 cd ${HOME}/result/wbm
@@ -38,6 +51,16 @@ rm ${prog}-${oldver}.tar.gz
 cd ${HOME}/result/gpl/wbm
 ln -s ../../wbm/${prog}-${ver}.tar.gz
 del-broken-links
+for vmver in 6 7; do
+  cd ${HOME}/result/vm/$vmver/wbm
+  rm -f ${prog}-${oldver}.tar.gz
+  ln -s ../../../wbm/${prog}-${ver}.tar.gz
+  del-broken-links
+  cd ${HOME}/result/vm/$vmver/wbm
+  rm -f ${prog}-${oldver}.tar.gz
+  ln -s ../../../../gpl/wbm/${prog}-${ver}.tar.gz
+  del-broken-links
+done
 
 # Deb
 cd ${HOME}/result/debian/dists/virtualmin-universal/main/binary-i386
@@ -54,3 +77,7 @@ cd ${HOME}/result/gpl/debian/dists/virtualmin-universal/main/binary-amd64
 del-broken-links
 
 aptly repo add virtualmin-universal ${prog}_${ver}_all.deb
+aptly repo add virtualmin-gpl-universal ${prog}_${ver}_all.deb
+aptly repo add virtualmin-7-pro ${prog}_${ver}_all.deb
+aptly repo add virtualmin-7-gpl ${prog}_${ver}_all.deb
+

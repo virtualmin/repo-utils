@@ -1,21 +1,45 @@
 #!/bin/sh
 
 # Generates various metadata for yum and wbm repos.
-# Run after any changes to packages in any yum or wbm repo.
+# Run after any changes to groups.a (Prefer update-universal for webmin/virtualmin updates.)
 
-basedir="$HOME/result"
-cachedir="$HOME/rpmcache"
+# VM7
+basedir="$HOME/result/vm/7"
+cachedir="$HOME/rpmcache.vm7"
 
+distrodirs="centos/7/x86_64 gpl/centos/7/x86_64 centos/8/x86_64 gpl/centos/8/x86_64 universal gpl/universal"
 # metadata repos
-distrodirs="centos/6/i386 centos/6/x86_64 centos/7/x86_64 universal gpl/universal gpl/centos/7/x86_64 gpl/centos/6/i386 gpl/centos/6/x86_64"
-
 for i in $distrodirs; do
     echo "Working on $basedir/$i"
+    mkdir -p $cachedir/$i
+    # Clean up old packages
+    repomanage --keep=2 --old $basedir/$i | xargs rm -f
+    cd "$basedir/$i"
     del-broken-links
-    createrepo -s sha --update -q -c $cachedir/$i $basedir/$i
-    #createrepo --deltas --oldpackagedirs $basedir/$i -s sha $basedir/$i
+    createrepo -q -c $cachedir/$i $basedir/$i
+    createrepo -q --deltas --oldpackagedirs $basedir/$i $basedir/$i
 done
 
+# Update comps.xml
+cd $HOME/src/virtualmin-yum-groups
+git pull
+git checkout master
+# Virtualmin Core
+rm $basedir/universal/repodata/*comps*
+createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-core-comps.xml $basedir/universal
+createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-core-comps.xml $basedir/gpl/universal
+# CentOS 7
+rm $basedir/centos/7/x86_64/repodata/*comps*
+createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-centos-7-comps.xml $basedir/centos/7/x86_64
+rm $basedir/gpl/centos/7/x86_64/repodata/*comps*
+createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-centos-7-comps.xml $basedir/gpl/centos/7/x86_64
+# CentOS 8
+rm $basedir/centos/8/x86_64/repodata/*comps*
+createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-centos-8-comps.xml $basedir/centos/8/x86_64
+rm $basedir/gpl/centos/8/x86_64/repodata/*comps*
+createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-centos-8-comps.xml $basedir/gpl/centos/8/x86_64
+
+# Tarball mess
 # wbm/wbt
 cd $basedir/wbm
 ./make-updates.pl > updates.txt
@@ -27,18 +51,22 @@ del-broken-links
 ./make-updates.pl > updates.txt
 ./make-versions.pl
 
-# VM6
 
+# Don't do vm6 until we've tested local repo generation
+exit 0
+
+# VM6
 basedir="$HOME/result/vm/6"
 cachedir="$HOME/rpmcache.vm6"
 
 # metadata repos
-distrodirs="centos/6/i386 centos/6/x86_64 gpl/centos/6/x86_64 gpl/centos/6/i386 centos/7/x86_64 gpl/centos/7/x86_64 centos/8/x86_64 gpl/centos/8/x86_64 universal gpl/universal"
-
+distrodirs="centos/7/x86_64 gpl/centos/7/x86_64 centos/8/x86_64 gpl/centos/8/x86_64 universal gpl/universal"
 for i in $distrodirs; do
     echo "Working on $basedir/$i"
+    mkdir -p $cachedir/$i
     # Clean up old packages
-    rm $(repomanage --keep=2 --old $basedir/$i)
+    repomanage --keep=2 --old $basedir/$i | xargs rm -f
+    # Generate metadata
     cd "$basedir/$i"
     del-broken-links
     createrepo -q -c $cachedir/$i $basedir/$i
@@ -48,19 +76,11 @@ done
 # Update comps.xml
 cd $HOME/src/virtualmin-yum-groups
 git pull
+git checkout vm6
 # Virtualmin Core
 rm $basedir/universal/repodata/*comps*
 createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-core-comps.xml $basedir/universal
 createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-core-comps.xml $basedir/gpl/universal
-# CentOS 6
-rm $basedir/centos/6/i386/repodata/*comps*
-createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-centos-6-comps.xml $basedir/centos/6/i386
-rm $basedir/centos/6/x86_64/repodata/*comps*
-createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-centos-6-comps.xml $basedir/centos/6/x86_64
-rm $basedir/gpl/centos/6/i386/repodata/*comps*
-createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-centos-6-comps.xml $basedir/gpl/centos/6/i386
-rm $basedir/gpl/centos/6/x86_64/repodata/*comps*
-createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-centos-6-comps.xml $basedir/gpl/centos/6/x86_64
 # CentOS 7
 rm $basedir/centos/7/x86_64/repodata/*comps*
 createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-centos-7-comps.xml $basedir/centos/7/x86_64
@@ -71,5 +91,17 @@ rm $basedir/centos/8/x86_64/repodata/*comps*
 createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-centos-8-comps.xml $basedir/centos/8/x86_64
 rm $basedir/gpl/centos/8/x86_64/repodata/*comps*
 createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-centos-8-comps.xml $basedir/gpl/centos/8/x86_64
+
+# Tarball mess
+# wbm/wbt
+cd $basedir/wbm
+./make-updates.pl > updates.txt
+./make-versions.pl
+
+# wbm/wbt
+cd $basedir/gpl/wbm
+del-broken-links
+./make-updates.pl > updates.txt
+./make-versions.pl
 
 updateslib.sh

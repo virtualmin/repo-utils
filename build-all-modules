@@ -20,9 +20,7 @@ function vgt() {
 }
 
 # Modules to build
-modules='virtualmin-nginx
-virtualmin-nginx-ssl'
-modules_all='virtualmin-mailman
+modules='virtualmin-mailman
 virtualmin-awstats
 virtualmin-registrar
 virtualmin-git
@@ -45,6 +43,7 @@ virtualmin-mailrelay
 virtualmin-init
 virtualmin-iframe
 virtualmin-messageoftheday
+virtualmin-support
 webmin-jailkit
 ruby-gems'
 
@@ -91,6 +90,8 @@ for m in $modules; do
     cp tmp/*.deb $HOME/result/gpl/debian/dists/virtualmin-universal/main/binary-amd64
     aptly repo add virtualmin-universal tmp/*.deb
     aptly repo add virtualmin-gpl-universal tmp/*.deb
+    aptly repo add virtualmin-7-pro tmp/*.deb
+    aptly repo add virtualmin-7-gpl tmp/*.deb
 
     sign-with old tmp/*.rpm
     cp tmp/*.rpm $HOME/result/universal/
@@ -98,11 +99,16 @@ for m in $modules; do
     sign-with vm6 tmp/*.rpm
     cp tmp/*.rpm $HOME/result/vm/6/universal/
     cp tmp/*.rpm $HOME/result/vm/6/gpl/universal/
+    sign-with vm7 tmp/*.rpm
+    cp tmp/*.rpm $HOME/result/vm/7/pro/rpm/noarch/
+    cp tmp/*.rpm $HOME/result/vm/7/gpl/rpm/noarch/
 
     cp tmp/*.wbm.gz $HOME/result/wbm
     cp tmp/*.wbm.gz $HOME/result/gpl/wbm
     cp tmp/*.wbm.gz $HOME/result/vm/6/wbm
     cp tmp/*.wbm.gz $HOME/result/vm/6/gpl/wbm
+    cp tmp/*.wbm.gz $HOME/result/vm/7/wbm
+    cp tmp/*.wbm.gz $HOME/result/vm/7/gpl/wbm
 
     # Cleanup
     rm -rf tmp/*
@@ -116,7 +122,9 @@ for m in $modules; do
 done
 
 exit 0
+
 if [ $publish -eq 1 ]; then
+  updatevm7rpm.sh
   update-universal-apt
   publish-universal
   rsync-repos.sh

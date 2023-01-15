@@ -3,20 +3,31 @@
 # Generates various metadata for yum and wbm universal repos.
 # Run after any changes to packages in any universal yum or wbm repo.
 
-basedir="$HOME/result"
-cachedir="$HOME/rpmcache"
+# VM7
+basedir="$HOME/result/vm/7"
+cachedir="$HOME/rpmcache.vm7"
 
-# metadata repos
-distrodirs="universal gpl/universal"
+distrodirs="gpl/rpm/noarch pro/rpm/noarch"
 
 for i in $distrodirs; do
     echo "Working on $basedir/$i"
     # Clean up old packages
     rm $(repomanage --keep=3 --old $basedir/$i)
+    cd "$basedir/$i"
     del-broken-links
-    createrepo -s sha --update -q -c $cachedir/$i $basedir/$i
-    #createrepo --deltas --oldpackagedirs $basedir/$i -s sha $basedir/$i
+    createrepo -q -c $cachedir/$i $basedir/$i
+    createrepo -q --deltas --oldpackagedirs $basedir/$i $basedir/$i
 done
+
+# Update comps.xml
+cd $HOME/src/virtualmin-yum-groups
+git pull
+git checkout master
+# Virtualmin Core
+rm $basedir/gpl/rpm/noarch/repodata/*comps*
+rm $basedir/pro/rpm/noarch/repodata/*comps*
+createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-core-comps.xml $basedir/pro/rpm/noarch
+createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-core-comps.xml $basedir/gpl/rpm/noarch
 
 # wbm/wbt
 cd $basedir/wbm
@@ -29,6 +40,10 @@ cd $basedir/gpl/wbm
 del-broken-links
 ./make-updates.pl > updates.txt
 ./make-versions.pl
+
+# Don't do vm6 locally until tested
+exit 0
+
 
 # VM6
 basedir="$HOME/result/vm/6"
@@ -47,6 +62,7 @@ done
 # Update comps.xml
 cd $HOME/src/virtualmin-yum-groups
 git pull
+git checkout vm6
 # Virtualmin Core
 rm $basedir/universal/repodata/*comps*
 createrepo -g $HOME/src/virtualmin-yum-groups/virtualmin-core-comps.xml $basedir/universal
@@ -64,4 +80,5 @@ del-broken-links
 ./make-updates.pl > updates.txt
 ./make-versions.pl
 
+# slib!
 updateslib.sh

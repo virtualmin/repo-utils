@@ -9,5 +9,8 @@ if [ $sig = "old" ]; then
 elif [ $sig = "vm6" ]; then
   echo "Signing with 'vm6' key"
   rpmsign -D '_gpg_name Virtualmin, Inc. (Package signing key for Virtualmin 6) <security@virtualmin.com>' --addsign $@
+elif [ $sig = "vm7" ]; then
+  echo "Signing with 'vm7' key"
+  rpmsign -D '_gpg_name Virtualmin, Inc. (Package signing key for Virtualmin 7) <security@virtualmin.com>' --addsign $@
 fi
 

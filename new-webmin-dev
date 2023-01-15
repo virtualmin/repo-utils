@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 if [ -z $1 ]; then
   echo "No version provided. Exiting."
   exit 1
@@ -7,6 +7,9 @@ fi
 ver=$1
 # XXX This will fail on devel releases
 oldver=`bc <<< "scale=4; ${ver}-0.020"`
+old="${prog}-${oldver}-*rpm"
+
+# Release
 if [ -z $2 ]; then
   rel=1
 else
@@ -17,41 +20,40 @@ prog=webmin
 rpmname=${prog}-${ver}-${rel}
 
 # RPM
-cd ${HOME}/result/universal
-curl -L -O https://download.webmin.com/devel/rpm/${rpmname}.noarch.rpm
-old=`repomanage --keep=2 --old . | grep ${prog}`
-rm -f $old
-cp ${rpmname}.noarch.rpm ${HOME}/result/vm/6/universal
 cd ${HOME}/result/vm/6/universal
-rm -f $old
-cd ${HOME}/result/gpl/universal
-ln -sf ../../universal/${rpmname}.noarch.rpm .
-rm -f $old
-cd ${HOME}/result/vm/6/gpl/universal
-ln -sf ../../universal/${rpmname}.noarch.rpm .
-rm -f $old
+curl -L -O https://download.webmin.com/devel/rpm/${rpmname}.noarch.rpm
+rm -f ${HOME}/result/vm/6/universal/$old
+cp ${rpmname}.noarch.rpm ${HOME}/result/vm/6/gpl/universal
+rm -f ${HOME}/result/vm/6/gpl/universal/$old
+cp ${rpmname}.noarch.rpm ${HOME}/result/vm/7/gpl/rpm/noarch
+rm -f ${HOME}/result/vm/7/gpl/rpm/noarch/$old
+cp ${rpmname}.noarch.rpm ${HOME}/result/vm/7/pro/rpm/noarch
+rm -f ${HOME}/result/vm/7/pro/rpm/noarch/$old
 
 # tarball
-cd ${HOME}/result/wbm
+cd ${HOME}/result/vm/6/wbm
 curl -L -O https://download.webmin.com/devel/tarballs/${prog}-${ver}.tar.gz
-rm ${prog}-${oldver}.tar.gz
-cd ${HOME}/result/gpl/wbm
+rm -f ${prog}-${oldver}.tar.gz
+cd ${HOME}/result/vm/6/gpl/wbm
 ln -s ../../wbm/${prog}-${ver}.tar.gz
 del-broken-links
+for vmver in 7; do
+  cd ${HOME}/result/vm/$vmver/wbm
+  rm -f ${prog}-${oldver}.tar.gz
+  ln -s ../../6/wbm/${prog}-${ver}.tar.gz
+  del-broken-links
+  cd ${HOME}/result/vm/$vmver/gpl/wbm
+  rm -f ${prog}-${oldver}.tar.gz
+  ln -s ../../../6/gpl/wbm/${prog}-${ver}.tar.gz
+  del-broken-links
+done
+exit
 
 # Deb
-cd ${HOME}/result/debian/dists/virtualmin-universal/main/binary-i386
+cd ${HOME}/deb-tmp
 curl -L -O https://download.webmin.com/devel/deb/${prog}_${ver}_all.deb
-cp ${prog}_${ver}_all.deb ../binary-amd64
-rm ${prog}_${oldver}_all.deb
-cp ${prog}_${ver}_all.deb ${HOME}/result/gpl/debian/dists/virtualmin-universal/main/binary-i386
-cp ${prog}_${ver}_all.deb ${HOME}/result/gpl/debian/dists/virtualmin-universal/main/binary-amd64
-cd ../binary-amd64
-rm ${prog}_${oldver}_all.deb
-cd ${HOME}/result/gpl/debian/dists/virtualmin-universal/main/binary-i386
-del-broken-links
-cd ${HOME}/result/gpl/debian/dists/virtualmin-universal/main/binary-amd64
-del-broken-links
 
 aptly repo add virtualmin-universal ${prog}_${ver}_all.deb
 aptly repo add virtualmin-gpl-universal ${prog}_${ver}_all.deb
+aptly repo add virtualmin-7-pro ${prog}_${ver}_all.deb
+aptly repo add virtualmin-7-gpl ${prog}_${ver}_all.deb

@@ -7,3 +7,6 @@
 aptly -architectures="all,i386,amd64" publish update -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" virtualmin-universal filesystem:pro:
 aptly -architectures="all,i386,amd64" publish update -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" virtualmin-universal filesystem:gpl:
 
+aptly -architectures="all,i386,amd64" publish update -gpg-key="586C427B9590C1C435A5FE393E570892B9A0B8B7" virtualmin filesystem:7-pro:
+aptly -architectures="all,i386,amd64" publish update -gpg-key="586C427B9590C1C435A5FE393E570892B9A0B8B7" virtualmin filesystem:7-gpl:
+

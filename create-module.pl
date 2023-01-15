@@ -5,9 +5,11 @@
 
 @ARGV >= 2 || die "usage: create-module.pl [--dir name] <file.wbm> <module>[/version] ..";
 
+my $pwd;
 chop($pwd = `pwd`);
 
 # Parse command-line options
+my @exclude;
 while(@ARGV) {
 	if ($ARGV[0] eq "--dir") {
 		shift(@ARGV);
@@ -17,17 +19,21 @@ while(@ARGV) {
 		shift(@ARGV);
 		$createsig = 1;
 		}
+	elsif ($ARGV[0] eq "--exclude") {
+		shift(@ARGV);
+		push(@exclude, shift(@ARGV));
+		}
 	else {
 		last;
 		}
 	}
 
-$file = shift(@ARGV);
+my $file = shift(@ARGV);
 if ($file !~ /^\//) {
 	$file = "$pwd/$file";
 	}
 unlink($file);
-foreach $m (@ARGV) {
+foreach my $m (@ARGV) {
 	# Parse module and forced version
 	$m =~ s/\/$//;
 	if ($m =~ /^(.*)\/(.*)$/) {
@@ -46,6 +52,9 @@ foreach $m (@ARGV) {
 	$copydir = "/tmp/create-module/$subdir";
 	system("rm -rf $copydir");
 	system("cp -r -L $mod $copydir 2>/dev/null || cp -R -L $mod $copydir");
+	foreach my $e (@exclude) {
+		system("find $copydir -name ".quotemeta($e)." | xargs rm -rf");
+		}
 
 	# Find type from .info file
 	undef(%minfo);
@@ -64,12 +73,19 @@ foreach $m (@ARGV) {
 		}
 	$flags = !-r $file ? "chf" : "rhf";
 	system("cd /tmp/create-module && find . -name .svn | xargs rm -rf");
+	system("cd /tmp/create-module && find . -name .git | xargs rm -rf");
+	system("cd /tmp/create-module && find . -name .build | xargs rm -rf");
+	system("cd /tmp/create-module && find . -name .pyc | xargs rm -rf");
 	system("cd /tmp/create-module && find . -name \\*.svn-work | xargs rm -rf");
 	system("cd /tmp/create-module && find . -name \\*.svn-base | xargs rm -rf");
 	system("cd /tmp/create-module && find . -name '*~' -o -name '*.rej' -o -name '*.orig' -o -name '.*.swp' | xargs rm -rf");
 	system("cd /tmp/create-module && find . -name RELEASE -o -name RELEASE.sh | xargs rm -rf");
 	system("cd /tmp/create-module && find . -name linux.sh -o -name freebsd.sh -o -name LICENCE -o -name README.md -o -name distrib | xargs rm -rf");
 	system("cd /tmp/create-module && find . -name 'makemodule*.pl' | xargs rm -rf");
+	if (-r "/tmp/create-module/$subdir/EXCLUDE") {
+		system("cd /tmp/create-module/$subdir && cat EXCLUDE | xargs rm -rf");
+		unlink("/tmp/create-module/$subdir/EXCLUDE");
+		}
 	unlink("/tmp/create-module/$subdir/IDEAS");
 	system("cd /tmp/create-module && find . -name \\*.cgi | xargs chmod +x");
 	system("cd /tmp/create-module && find . -name \\*.pl | xargs chmod +x");
@@ -89,7 +105,7 @@ if ($createsig) {
 # Fill an associative array with name=value pairs from a file
 sub read_file
 {
-open(ARFILE, $_[0]) || return 0;
+open(ARFILE, "<".$_[0]) || return 0;
 while(<ARFILE>) {
 	s/\r|\n//g;
         if (!/^#/ && /^([^=]*)=(.*)$/) {
@@ -107,7 +123,7 @@ sub write_file
 {
 local(%old, @order);
 &read_file($_[0], \%old, \@order);
-open(ARFILE, ">$_[0]");
+open(ARFILE, ">".$_[0]);
 foreach $k (@order) {
         print ARFILE $k,"=",$_[1]->{$k},"\n" if (exists($_[1]->{$k}));
 	}
