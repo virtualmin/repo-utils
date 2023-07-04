@@ -23,11 +23,14 @@ rpmname=${prog}-${ver}-${rel}
 cd ${HOME}/result/vm/6/universal
 curl -L -O https://download.webmin.com/devel/rpm/${rpmname}.noarch.rpm
 rm -f ${HOME}/result/vm/6/universal/$old
+sign-with vm6 ${rpmname}.noarch.rpm
 cp ${rpmname}.noarch.rpm ${HOME}/result/vm/6/gpl/universal
 rm -f ${HOME}/result/vm/6/gpl/universal/$old
 cp ${rpmname}.noarch.rpm ${HOME}/result/vm/7/gpl/rpm/noarch
+sign-with vm7 ${HOME}/result/vm/7/gpl/rpm/noarch/${rpmname}.noarch.rpm
 rm -f ${HOME}/result/vm/7/gpl/rpm/noarch/$old
 cp ${rpmname}.noarch.rpm ${HOME}/result/vm/7/pro/rpm/noarch
+sign-with vm7 ${HOME}/result/vm/7/pro/rpm/noarch/${rpmname}.noarch.rpm
 rm -f ${HOME}/result/vm/7/pro/rpm/noarch/$old
 
 # tarball
@@ -47,7 +50,6 @@ for vmver in 7; do
   ln -s ../../../6/gpl/wbm/${prog}-${ver}.tar.gz
   del-broken-links
 done
-exit
 
 # Deb
 cd ${HOME}/deb-tmp

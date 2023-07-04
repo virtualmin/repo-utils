@@ -1,0 +1,27 @@
+#!/usr/bin/bash
+# Publish yum repos from a list
+
+# echo, exit on error/undefined vars
+set -xeu
+
+basedir=$HOME/result
+cachedir="$HOME/rpmcache.vm7"
+
+if [ -s "$HOME/rpm-publish-queue" ]; then
+  repos=$(/usr/bin/sort "$HOME/rpm-publish-queue" | /usr/bin/uniq)
+  echo $repos
+  for repo in $repos; do
+    echo "Working on $basedir/$repo"
+    # Clean up old packages
+    #rm $(repomanage --keep=2 --old "$basedir/$repo")
+    if [ -d "$basedir/$repo" ]; then
+      cd "$basedir/$repo"
+      $HOME/bin/del-broken-links
+      /usr/bin/createrepo -q -c "$cachedir/$repo" "$basedir/$repo"
+    else
+      echo "$basedir/$repo does not exist."
+    fi
+  done
+fi
+# Empty the queue
+/usr/bin/flock "$HOME/rpm-publish-queue" -c 'echo -n > "$HOME/rpm-publish-queue"'

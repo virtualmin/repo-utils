@@ -61,7 +61,6 @@ for vmver in 6 7; do
   del-broken-links
 done
 
-
 # Deb
 cd ${HOME}/result/debian/dists/virtualmin-universal/main/binary-i386
 curl -L -O http://prdownloads.sourceforge.net/webadmin/${prog}_${ver}_all.deb

@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Publish repos to the local filesystem
+#aptly -architectures="all" publish repo -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" -distribution="virtualmin-universal" virtualmin-universal filesystem:pro:
+#aptly -architectures="all" publish repo -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" -distribution="virtualmin-universal" virtualmin-gpl-universal filesystem:gpl:
+
+for distro in bionic focal; do
+  aptly -architectures="all,i386,amd64" publish update -force-overwrite -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" "virtualmin-$distro" filesystem:pro:
+  aptly -architectures="all,i386,amd64" publish update -force-overwrite -gpg-key="E36F06647D8EBD2BE3642BCED9F9010760D62A6B" "virtualmin-$distro" filesystem:gpl:
+done
+
+#aptly -architectures="all,i386,amd64" publish update -force-overwrite -gpg-key="586C427B9590C1C435A5FE393E570892B9A0B8B7" "virtualmin-7" filesystem:7-pro:
+#aptly -architectures="all,i386,amd64" publish update -force-overwrite -gpg-key="586C427B9590C1C435A5FE393E570892B9A0B8B7" "virtualmin-7" filesystem:7-gpl:
