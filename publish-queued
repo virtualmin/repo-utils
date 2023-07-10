@@ -6,22 +6,51 @@ set -xeu
 
 basedir=$HOME/result
 cachedir="$HOME/rpmcache.vm7"
+needsync=0
 
 if [ -s "$HOME/rpm-publish-queue" ]; then
-  repos=$(/usr/bin/sort "$HOME/rpm-publish-queue" | /usr/bin/uniq)
+  packages=$(/usr/bin/sort "$HOME/rpm-publish-queue")
+  # Sign queued packages
+  for package in $packages; do
+    if [ -f "$basedir/$package" ]; then
+      echo "Signing $package"
+      case "$package" in
+        *vm/6*)
+          $HOME/bin/sign-with vm6 "$basedir/$package"
+          ;;
+        *vm/7*)
+          $HOME/bin/sign-with vm7 "$basedir/$package"
+          ;;
+        *)
+          echo "Something went wrong, couldn't detect which key to sign with."
+          ;;
+      esac
+    fi
+  done
+  exit 0
+  # Create metadata for all modified package dirs
+  repos=$(for package in $packages; do dirname "$package" | /usr/bin/uniq; done)
   echo $repos
   for repo in $repos; do
-    echo "Working on $basedir/$repo"
+    fullrepo="$basedir/$repo"
+    echo "Working on $fullrepo"
     # Clean up old packages
-    #rm $(repomanage --keep=2 --old "$basedir/$repo")
-    if [ -d "$basedir/$repo" ]; then
-      cd "$basedir/$repo"
+    #rm $(repomanage --keep=2 --old "$fullrepo")
+    if [ -d "$fullrepo" ]; then
+      cd "$fullrepo"
       $HOME/bin/del-broken-links
-      /usr/bin/createrepo -q -c "$cachedir/$repo" "$basedir/$repo"
+      /usr/bin/createrepo -q -c "$cachedir/$repo" "$fullrepo"
+      need_sync=1
     else
-      echo "$basedir/$repo does not exist."
+      echo "$fullrepo does not exist."
     fi
   done
 fi
+
 # Empty the queue
 /usr/bin/flock "$HOME/rpm-publish-queue" -c 'echo -n > "$HOME/rpm-publish-queue"'
+
+# Should we sync?
+if [ "$needsync" -eq 1 ]; then
+  $HOME/bin/rsync-vm7.sh
+fi
